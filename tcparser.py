@@ -14,7 +14,7 @@ usage example:
     g=tc()
     print g.qdisc_getall()
     print g.filter_for_class("eth0", "1:10")"""
-
+# TODO: add "ranger" - try summary range of sequences  
 #ug_format - format for binary number where some bits can changed. 
 #so 0 give 0, 1 give 1, 2 give 0 or 1 
 #ip packet format
@@ -189,16 +189,19 @@ class tc():
     def filter_for_class(self, dev, qclass):
         "search filter for qclass"
         dev = str(dev)
+        result = []
         std_out, std_err, exit_code = self.command("/sbin/tc -d -s filter show dev %s" % (dev))
         #LOGGER.debug("result\n %s" % std_out)
         for lineset in std_out.split("filter "):
-            if re.search(".*flowid\s%s\s.*"%(re.escape(qclass)), lineset, re.I):
-                #LOGGER.debug("lineset %s"%lineset)
-                match_pattern = re.search("match\s(?P<template>[\d\w]*)\/(?P<mask>[\d\w]*)\sat\s(?P<at>[\d]*)\s.*", lineset, re.MULTILINE).groupdict()
-                #LOGGER.debug(match_pattern)
-                ps = self.pattern_resolver(value = match_pattern["template"], mask = match_pattern["mask"], bits=32)
-                oo = self.resolv(ps, 8 * int(match_pattern["at"]))
-                return oo
+            if re.search(".*flowid\s%s\s.*" % (re.escape(qclass)), lineset, re.I):
+#                LOGGER.debug("lineset %s" % lineset)
+                for match_str in lineset.split("\n"):
+                    if re.search("match\s", match_str, re.I):
+                        match_pattern = re.search("match\s(?P<template>[\d\w]*)\/(?P<mask>[\d\w]*)\sat\s(?P<at>[\d]*)\s.*", match_str, re.MULTILINE).groupdict()
+                        ps = self.pattern_resolver(value = match_pattern["template"], mask = match_pattern["mask"], bits=32)
+                        oo = self.resolv(ps, 8 * int(match_pattern["at"]))
+                        result.append(oo)
+                return result
 
 
     def command(self, command_line):
