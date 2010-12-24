@@ -210,13 +210,15 @@ class tc():
         else:
             temp = filter(lambda x: x["class"] == ins_data["parentqclass"], data_list)  # search parent queue
             if temp:
-                temp[0].update({"data": []})
+                try:
+                    temp[0]["data"]
+                except:
+                    temp[0].update({"data": []})
                 temp[0]["data"].append(ins_data)
             else: # recursion
                 for q in data_list:
                     if q["data"]:
                         self.appender(q["data"], ins_data)
-        print data_list
                 
     def class_stat(self, dev, qclass=None):
         "stat from class on dev. if class not given, show all stat"
